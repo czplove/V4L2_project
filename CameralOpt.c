@@ -69,6 +69,17 @@ int Init_Cameral(int Width , int Hight)
 //      querybuffer.index , querybuffer.length , querybuffer.m.offset);  
         length = querybuffer.length ;   
   
+        //-一个文件或者其它对象映射进内存
+        //-start：映射区的开始地址，设置为0时表示由系统决定映射区的起始地址。
+        //-length：映射区的长度。//长度单位是 以字节为单位，不足一内存页按一内存页处理
+        //-prot：期望的内存保护标志，不能与文件的打开模式冲突。是以下的某个值，可以通过or运算合理地组合在一起
+        //-PROT_EXEC //页内容可以被执行
+        //-PROT_READ //页内容可以被读取
+        //-PROT_WRITE //页可以被写入
+        //-PROT_NONE //页不可访问
+        //-flags：指定映射对象的类型，映射选项和映射页是否可以共享。MAP_SHARED //与其它所有映射这个对象的进程共享映射空间。对共享区的写入，相当于输出到文件。
+        //-fd：有效的文件描述词。一般是由open()函数返回，其值也可以设置为-1，此时需要指定flags参数中的MAP_ANON,表明进行的是匿名映射。
+        //-off_toffset：被映射对象内容的起点。
         //将摄像头内存印射到进程的内存地址  
         yuv[i] = mmap(0,querybuffer.length , PROT_READ | PROT_WRITE , MAP_SHARED , video_fd , querybuffer.m.offset );  
   

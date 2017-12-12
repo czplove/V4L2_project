@@ -1,4 +1,11 @@
-﻿#include "FrameBufferOpt.h"  
+﻿#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <linux/fb.h>
+#include <sys/mman.h>
+#include<sys/ioctl.h>
+#include "FrameBufferOpt.h"  
   
 static int Frame_fd ;   
 static int *FrameBuffer = NULL ;   
@@ -7,6 +14,8 @@ static int W , H ;
 //初始化framebuffer  
 int Init_FrameBuffer(int Width , int Higth)  
 {  
+	struct fb_fix_screeninfo finfo;
+	
     W = Width ;   
     H = Higth ;   
     Frame_fd = open("/dev/fb0" , O_RDWR);  
@@ -15,9 +24,15 @@ int Init_FrameBuffer(int Width , int Higth)
         perror("open frame buffer fail");  
         return -1 ;   
     }  
+    
+    if(ioctl(Frame_fd, FBIOGET_FSCREENINFO, &finfo))
+	{
+	   printf("Error:reading fixed info.\n");
+	   return -1;
+	}
   
 //根本就不用CPU搬运   用DMA做为搬运工  
-FrameBuffer = mmap(0, 1280*1024*4 , PROT_READ | PROT_WRITE , MAP_SHARED , Frame_fd ,0 );  
+FrameBuffer = mmap(0, finfo.smem_len , PROT_READ | PROT_WRITE , MAP_SHARED , Frame_fd ,0 );  
     if(FrameBuffer == (void *)-1)  
     {  
         perror("memory map fail");  
