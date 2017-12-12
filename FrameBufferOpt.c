@@ -9,7 +9,7 @@ int Init_FrameBuffer(int Width , int Higth)
 {  
     W = Width ;   
     H = Higth ;   
-    Frame_fd = open("/dev/fb" , O_RDWR);  
+    Frame_fd = open("/dev/fb0" , O_RDWR);  
     if(-1 == Frame_fd)  
     {  
         perror("open frame buffer fail");  
