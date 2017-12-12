@@ -31,6 +31,8 @@ int Init_FrameBuffer(int Width , int Higth)
 	   return -1;
 	}
   
+  	printf("fb_size = %d\r\n",finfo.smem_len);						//-1638400
+  	
 //根本就不用CPU搬运   用DMA做为搬运工  
 FrameBuffer = mmap(0, finfo.smem_len , PROT_READ | PROT_WRITE , MAP_SHARED , Frame_fd ,0 );  
     if(FrameBuffer == (void *)-1)  

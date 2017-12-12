@@ -26,7 +26,7 @@ int Init_Cameral(int Width , int Hight)
     format.fmt.pix.height = Hight;   
     format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV ;  //我支持的格式是这个  
   
-    ret = ioctl(video_fd , VIDIOC_S_FMT , &format);  
+    ret = ioctl(video_fd , VIDIOC_S_FMT , &format);  //-设置当前驱动的频捕获格式
     if(ret != 0)  
     {  
         perror("set video format fail");  
@@ -37,11 +37,11 @@ int Init_Cameral(int Width , int Hight)
     //申请buffer,切割成几个部分  
     //3  
     struct v4l2_requestbuffers  requestbuffer ;   
-    requestbuffer.count = COUNT ;   
-    requestbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE ;   
-    requestbuffer.memory = V4L2_MEMORY_MMAP ;   
+    requestbuffer.count = COUNT ;   //-缓存数量，也就是说在缓存队列里保持多少张照片
+    requestbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE ;   //-数据流类型，必须永远是V4L2_BUF_TYPE_VIDEO_CAPTURE
+    requestbuffer.memory = V4L2_MEMORY_MMAP ;   //-V4L2_MEMORY_MMAP 或 V4L2_MEMORY_USERPTR
   
-    ret = ioctl(video_fd , VIDIOC_REQBUFS , &requestbuffer);  
+    ret = ioctl(video_fd , VIDIOC_REQBUFS , &requestbuffer);  //-分配内存
     if(ret != 0)  
     {  
         perror("request buffer fail ");  
@@ -51,23 +51,23 @@ int Init_Cameral(int Width , int Hight)
       
     //querybuffer  
     struct v4l2_buffer querybuffer ;   
-    querybuffer.type =  V4L2_BUF_TYPE_VIDEO_CAPTURE ;   
-    querybuffer.memory = V4L2_MEMORY_MMAP ;   
+    querybuffer.type =  V4L2_BUF_TYPE_VIDEO_CAPTURE ;   //-buffer 类型
+    querybuffer.memory = V4L2_MEMORY_MMAP ;   //-IO 方式，被应用程序设置
   
     for(i = 0 ; i < COUNT ; i++)  
-    {  
-        querybuffer.index = i ;       
+    {
+        querybuffer.index = i ;       //-buffer 序号
   
-        ret = ioctl(video_fd , VIDIOC_QUERYBUF , &querybuffer);  
+        ret = ioctl(video_fd , VIDIOC_QUERYBUF , &querybuffer);  //-把VIDIOC_REQBUFS中分配的数据缓存转换成物理地址
         if(ret != 0)  
         {  
             perror("query buffer fail");  
             return -4 ;   
         }  
       
-//      printf("index:%d length:%d  offset:%d \n" ,   
-//      querybuffer.index , querybuffer.length , querybuffer.m.offset);  
-        length = querybuffer.length ;   
+      printf("index:%d length:%d  offset:%d \n" ,   
+      querybuffer.index , querybuffer.length , querybuffer.m.offset);  
+        length = querybuffer.length ;   //-缓冲帧长度 
   
         //-一个文件或者其它对象映射进内存
         //-start：映射区的开始地址，设置为0时表示由系统决定映射区的起始地址。
@@ -91,13 +91,13 @@ int Init_Cameral(int Width , int Hight)
         queuebuffer.memory =  V4L2_MEMORY_MMAP ;   
         queuebuffer.index = i ;       
   
-        ret = ioctl(video_fd , VIDIOC_QBUF , &queuebuffer);  
+        ret = ioctl(video_fd , VIDIOC_QBUF , &queuebuffer);  //-把数据放回缓存队列
         if(ret != 0)  
         {  
             perror("queuebuffer fail");  
             return -5 ;   
-        }  
-    }  
+        }
+    }
     //初始化入队出队  
     enqueue.type = V4L2_BUF_TYPE_VIDEO_CAPTURE ;   
     dequeue.type = V4L2_BUF_TYPE_VIDEO_CAPTURE ;   
@@ -147,7 +147,7 @@ int Get_Picture(char *buffer)
 {  
     int ret ;   
     //出队  
-    ret = ioctl(video_fd , VIDIOC_DQBUF , &dequeue);  
+    ret = ioctl(video_fd , VIDIOC_DQBUF , &dequeue);  //-把数据从缓存中读取出来
     if(ret != 0)  
     {  
         perror("dequeue fail");  
