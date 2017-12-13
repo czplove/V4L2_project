@@ -11,7 +11,7 @@
 int main(void)  
 {  
     char yuyv[WIDTH*HIGHT*2];  //-存储一张图片的数据
-    char bmp[WIDTH*HIGHT*3];  
+    char bmp[WIDTH*HIGHT*3];  //-24位图需要三个字节表示一个像素点
   
 //  set_bmp_header((struct bmp_header_t *)bmp, WIDTH, HIGHT);  
     //初始化摄像头  
@@ -25,9 +25,23 @@ int main(void)
     int count = 0 ;   
     while(1)  
     {
+#if 0
         Get_Picture(yuyv);  //-从摄像头获取图片数据
         yuyv2rgb24(yuyv, bmp, WIDTH, HIGHT);  //-把图像数据转化为可用个格式
         Write_FrameBuffer(bmp);  //-转化后的数据输出到屏幕上进行显示
+#endif
+        
+#if 1
+	//-屏幕显示固定图片
+	//-像素点和内存映射之间还有RGB的关系
+	
+#endif
+
+#if 0
+	//-视屏获取的图片存储为文件形式
+	
+#endif
+
 //      printf("count:%d \n" , count++);  
     }
     //关闭摄像头  
