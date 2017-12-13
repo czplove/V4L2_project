@@ -5,10 +5,12 @@ char *yuv[COUNT] ;
 struct v4l2_buffer  enqueue  , dequeue ;  //定义出入队的操作结构体成员  
   
 int Init_Cameral(int Width , int Hight)  
-{  
+{
     //参数检查  
     char *videodevname = NULL ;   
-    videodevname = "/dev/video0" ;   
+    videodevname = "/dev/video0" ;  
+    struct v4l2_capability cap; 
+    int ret ; 
       
     //打开设备  
     video_fd = open(videodevname , O_RDWR);  
@@ -16,39 +18,76 @@ int Init_Cameral(int Width , int Hight)
     {  
         perror("open video device fail");  
         return -1 ;   
-    }  
+    }
+    
+    ret = ioctl(video_fd,VIDIOC_QUERYCAP,&cap);	//-查询设备属性
+    if(ret != 0)  
+    {
+        perror("Query device properties fail");  
+        return -2 ;   
+    }
+    printf("Driver Name:%s\nCard Name:%s\nBus info:%s\nDriver Version:%u.%u.%u\n",
+    	cap.driver,cap.card,cap.bus_info,(cap.version>>16)&0XFF, (cap.version>>8)&0XFF,cap.version&0XFF);
+    printf("Device support operation = %d\r\n",cap.capabilities);  
+    
+    struct v4l2_format fmt; 
+    fmt.type=V4L2_BUF_TYPE_VIDEO_CAPTURE; 
+    ioctl(video_fd, VIDIOC_G_FMT, &fmt);	//-显示当前帧的相关信息
+	printf("Current data format information:\n\twidth:%d\n\theight:%d\n",
+		fmt.fmt.pix.width,fmt.fmt.pix.height);
+    
+    struct v4l2_fmtdesc fmtdesc; 
+    fmtdesc.index=0; 
+    fmtdesc.type=V4L2_BUF_TYPE_VIDEO_CAPTURE; 
+    printf("Support format:\n");
+    while(ioctl(video_fd, VIDIOC_ENUM_FMT, &fmtdesc) != -1)	//-显示所有支持的格式
+	{
+		printf("\t%d.%s\n",fmtdesc.index+1,fmtdesc.description);
+		fmtdesc.index++;
+	}
+	
+	//-struct v4l2_format fmt; 
+	fmt.type=V4L2_BUF_TYPE_VIDEO_CAPTURE; 
+	fmt.fmt.pix.pixelformat=V4L2_PIX_FMT_RGB32; 
+	if(ioctl(video_fd,VIDIOC_TRY_FMT,&fmt)==-1)	//-检查是否支持某种帧格式
+		if(errno==EINVAL)
+			printf("not support format RGB32!\n");
+    
   
     int i ;   
-    int ret ;   
+    //-int ret ;   
     struct v4l2_format  format ;   
     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE ;   
     format.fmt.pix.width  = Width;   
     format.fmt.pix.height = Hight;   
-    format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV ;  //我支持的格式是这个  
+    format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV ;  //我支持的格式是这个  v4l2_fourcc('Y', 'U', 'Y', 'V') /* 16  YUV 4:2:2     */
   
     ret = ioctl(video_fd , VIDIOC_S_FMT , &format);  //-设置当前驱动的频捕获格式
     if(ret != 0)  
     {  
         perror("set video format fail");  
         return -2 ;   
-    }  
+    }
   
-  
+  	//-应用程序和设备有三种交换数据的方法，直接 read/write、内存映射(memory mapping)和用户指针。
     //申请buffer,切割成几个部分  
     //3  
     struct v4l2_requestbuffers  requestbuffer ;   
     requestbuffer.count = COUNT ;   //-缓存数量，也就是说在缓存队列里保持多少张照片
     requestbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE ;   //-数据流类型，必须永远是V4L2_BUF_TYPE_VIDEO_CAPTURE
-    requestbuffer.memory = V4L2_MEMORY_MMAP ;   //-V4L2_MEMORY_MMAP 或 V4L2_MEMORY_USERPTR
+    requestbuffer.memory = V4L2_MEMORY_MMAP ;   //-V4L2_MEMORY_MMAP 或 V4L2_MEMORY_USERPTR(区别是内存映射还是用户指针方式)
   
-    ret = ioctl(video_fd , VIDIOC_REQBUFS , &requestbuffer);  //-分配内存
+    ret = ioctl(video_fd , VIDIOC_REQBUFS , &requestbuffer);  //-向设备申请缓冲区
     if(ret != 0)  
     {  
         perror("request buffer fail ");  
         return -3  ;  
     }  
       
-      
+    //-获取并记录缓存的物理空间
+    //-使用VIDIOC_REQBUFS，我们获取了req.count个缓存，下一步通过调用VIDIOC_QUERYBUF
+    //-命令来获取这些缓存的地址，然后使用mmap函数转换成应用程序中的绝对地址，最后把这
+    //-段缓存放入缓存队列
     //querybuffer  
     struct v4l2_buffer querybuffer ;   
     querybuffer.type =  V4L2_BUF_TYPE_VIDEO_CAPTURE ;   //-buffer 类型
@@ -91,9 +130,9 @@ int Init_Cameral(int Width , int Hight)
         queuebuffer.memory =  V4L2_MEMORY_MMAP ;   
         queuebuffer.index = i ;       
   
-        ret = ioctl(video_fd , VIDIOC_QBUF , &queuebuffer);  //-把数据放回缓存队列
+        ret = ioctl(video_fd , VIDIOC_QBUF , &queuebuffer);  //-将缓冲帧放入队列
         if(ret != 0)  
-        {  
+        {
             perror("queuebuffer fail");  
             return -5 ;   
         }
@@ -105,10 +144,10 @@ int Init_Cameral(int Width , int Hight)
     dequeue.memory = V4L2_MEMORY_MMAP ;   
   
     return 0 ;   
-}  
+}
   
 int Exit_Cameral(void)  
-{  
+{
     int i ;   
     for(i = 0 ; i < COUNT ; i++)  
         munmap(yuv+i , length);  
@@ -117,23 +156,23 @@ int Exit_Cameral(void)
 }  
   
 int Start_Cameral(void)  
-{  
+{
     //开启摄像头  
     int ret ;   
-    int on = 1 ;   
-    ret = ioctl(video_fd , VIDIOC_STREAMON , &on);  
+    int on = V4L2_BUF_TYPE_VIDEO_CAPTURE ;   
+    ret = ioctl(video_fd , VIDIOC_STREAMON , &on);  //-启动数据流
     if(ret != 0)  
-    {  
+    {
         perror("start Cameral fail");  
         return -1 ;   
     }  
     return 0 ;   
 }  
 int Stop_Cameral(void)  
-{  
+{
     //停止摄像头  
     int ret ;   
-    int off= 1 ;   
+    int off= V4L2_BUF_TYPE_VIDEO_CAPTURE ;   
     ret = ioctl(video_fd , VIDIOC_STREAMOFF, &off);  
     if(ret != 0)  
     {  
@@ -144,10 +183,10 @@ int Stop_Cameral(void)
 }  
   
 int Get_Picture(char *buffer)  
-{  
+{
     int ret ;   
     //出队  
-    ret = ioctl(video_fd , VIDIOC_DQBUF , &dequeue);  //-把数据从缓存中读取出来
+    ret = ioctl(video_fd , VIDIOC_DQBUF , &dequeue);  //-从缓冲区取出一个缓冲帧
     if(ret != 0)  
     {  
         perror("dequeue fail");  
@@ -159,11 +198,11 @@ int Get_Picture(char *buffer)
 //  write(yuyv_fd , yuv[dequeue.index] , dequeue.length);  
   
     enqueue.index = dequeue.index ;   
-    ret = ioctl(video_fd , VIDIOC_QBUF , &enqueue);  
+    ret = ioctl(video_fd , VIDIOC_QBUF , &enqueue);  //-放回队列中就可以再次获取到数据了
     if(ret != 0)  
-    {  
+    {
         perror("enqueue fail");  
         return -2 ;   
     }  
     return 0 ;   
-}  
+}

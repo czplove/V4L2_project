@@ -10,7 +10,7 @@
   
 int main(void)  
 {  
-    char yuyv[WIDTH*HIGHT*2];  
+    char yuyv[WIDTH*HIGHT*2];  //-存储一张图片的数据
     char bmp[WIDTH*HIGHT*3];  
   
 //  set_bmp_header((struct bmp_header_t *)bmp, WIDTH, HIGHT);  
@@ -24,12 +24,12 @@ int main(void)
     //采集一张图片  
     int count = 0 ;   
     while(1)  
-    {  
-        Get_Picture(yuyv);  
-        yuyv2rgb24(yuyv, bmp, WIDTH, HIGHT);  
-        Write_FrameBuffer(bmp);  
+    {
+        Get_Picture(yuyv);  //-从摄像头获取图片数据
+        yuyv2rgb24(yuyv, bmp, WIDTH, HIGHT);  //-把图像数据转化为可用个格式
+        Write_FrameBuffer(bmp);  //-转化后的数据输出到屏幕上进行显示
 //      printf("count:%d \n" , count++);  
-    }  
+    }
     //关闭摄像头  
     Stop_Cameral();  
     //关闭Framebuffer  
