@@ -13,6 +13,7 @@ static int W , H ;
 static struct fb_fix_screeninfo finfo;
 static struct fb_var_screeninfo vinfo;
   
+#if 0  
 //初始化framebuffer  
 int Init_FrameBuffer(int Width , int Higth)  
 {
@@ -49,7 +50,8 @@ FrameBuffer = mmap(0, finfo.smem_len , PROT_READ | PROT_WRITE , MAP_SHARED , Fra
         return -2 ;  
     }  
     return 0 ;   
-}  
+}
+#endif  
   
 //写入framebuffer  
 int Write_FrameBuffer(const char *buffer)	//-传入的数据是纯RGB数据

@@ -23,6 +23,7 @@ int main(void)
     Start_Cameral();  
     //采集一张图片  
     int count = 0 ;   
+    
     while(1)  
     {
 #if 0
@@ -31,10 +32,14 @@ int main(void)
         Write_FrameBuffer(bmp);  //-转化后的数据输出到屏幕上进行显示
 #endif
         
-#if 1
+#if 0
 	//-屏幕显示固定图片
 	//-像素点和内存映射之间还有RGB的关系
 	FrameBuffer_draw();
+#endif
+
+#if 0
+	show_bmp( "/media/mmcblk0p1/hello16.bmp","/media/mmcblk0p1/data.fb");  
 #endif
 
 #if 0

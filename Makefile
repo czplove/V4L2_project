@@ -16,6 +16,7 @@ INCLUDES = -I.
 OBJECTS = project.o \
 	CameralOpt.o \
 	FrameBufferOpt.o \
+	BmpOpt.o \
 	juv.o
 
 
