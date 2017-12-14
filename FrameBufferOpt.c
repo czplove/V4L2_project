@@ -90,31 +90,48 @@ void fb_draw_point(void *memp,
 }
 
 //-直接在屏幕上画图,来测试屏幕实际反馈参数
+//-每个像素点的颜色有了:一个像素点16位数据表示,然后一个点一个点在内存中是连续内存空间
+//-像素点在内存中的分配是:和二维数组是一样的行是一维数据 多个行组成二维数据
 int FrameBuffer_draw(void)
 {
 	int k=0, i=0, j=0;
-	int col[] = {0xffffffff,0x00000000,~0x1f,0x0000f800,0x7e0,0x1f};
+	//-int col[] = {0xffffffff,0x00000000,~0x1f,0x0000f800,0x7e0,0x1f};
+	unsigned short int col[] = {0xffff,0x0000,~0x1f,0xf800,0x7e0,0x1f};
 	char	inputc;
 	
 	for(k = 0; k<1600; k++)
 	{
 	   printf("%d:col[%d] = 0x%x",k,k%5,col[k%5]);
 	   /*
-			0:col[0] = 0xffffffff
+			0:col[0] = 0xffffffff		白色
+			1:col[1] = 0x0				黑色
+			2:col[2] = 0xffffffe0		黄色
+			3:col[3] = 0xf800			红色
+			4:col[4] = 0x7e0			绿纯色
+			
+			//-unsigned short int
+			0:col[0] = 0xffff
 			1:col[1] = 0x0
-			2:col[2] = 0xffffffe0
+			2:col[2] = 0xffe0
 			3:col[3] = 0xf800
 			4:col[4] = 0x7e0
 	   */
 
 	   //-color = 1<<k;
 	   
-	   for(j=0; j<vinfo.yres - 1; j++){
+	   for(j=0; j<vinfo.yres - 1; j++){	//-全屏底色是黑的
 		   for(i=0; i<vinfo.xres - 1 ; i++) {
-				fb_draw_point(FrameBuffer,vinfo.xres,vinfo.yres,i,j,col[0]);
+				fb_draw_point(FrameBuffer,vinfo.xres,vinfo.yres,i,j,col[1]);
 		   }
 	   }
 
+#if 0
+	   for(j=0; j<vinfo.yres/2 - 1; j++){	//-验证屏幕和内存之间的对应关系
+		   for(i=0; i<vinfo.xres/2 - 1 ; i++) {
+				fb_draw_point(FrameBuffer,vinfo.xres,vinfo.yres,i,j,col[0]);
+		   }
+	   }
+#endif
 
 		for(i = vinfo.xres / 2 - 50; i < vinfo.xres / 2 + 50; i++) {
 	        for(j=vinfo.yres / 2 - 50; j<vinfo.yres / 2 + 50; j++) {
