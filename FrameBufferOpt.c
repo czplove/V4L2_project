@@ -15,7 +15,7 @@ static struct fb_var_screeninfo vinfo;
   
 //初始化framebuffer  
 int Init_FrameBuffer(int Width , int Higth)  
-{  
+{
 	
     W = Width ;   
     H = Higth ;   
@@ -68,7 +68,7 @@ int Write_FrameBuffer(const char *buffer)	//-传入的数据是纯RGB数据
         }  
     }  
     return 0 ;   
-}  
+}
   
 //退出framebuffer  
 int Exit_Framebuffer(void)  
@@ -77,3 +77,53 @@ int Exit_Framebuffer(void)
     close(Frame_fd);  
     return 0 ;   
 }  
+
+///////////////////////////////////////////////////////////////////////////////
+
+//-针对目前M3352平台 液晶屏的测试参数:xres 800, yres 480, width -1, height -1, 16bpp
+void fb_draw_point(void *memp, 
+	  			   unsigned int xres, unsigned int yres, 
+				   unsigned int x, unsigned int y, 
+				   unsigned int color)
+{
+   *((unsigned short int *)memp+xres*y+x)=color;	//-整个屏幕映射成了一块内存,实际操作驱动去完成
+}
+
+//-直接在屏幕上画图,来测试屏幕实际反馈参数
+int FrameBuffer_draw(void)
+{
+	int k=0, i=0, j=0;
+	int col[] = {0xffffffff,0x00000000,~0x1f,0x0000f800,0x7e0,0x1f};
+	char	inputc;
+	
+	for(k = 0; k<1600; k++)
+	{
+	   printf("%d:col[%d] = 0x%x",k,k%5,col[k%5]);
+	   /*
+			0:col[0] = 0xffffffff
+			1:col[1] = 0x0
+			2:col[2] = 0xffffffe0
+			3:col[3] = 0xf800
+			4:col[4] = 0x7e0
+	   */
+
+	   //-color = 1<<k;
+	   
+	   for(j=0; j<vinfo.yres - 1; j++){
+		   for(i=0; i<vinfo.xres - 1 ; i++) {
+				fb_draw_point(FrameBuffer,vinfo.xres,vinfo.yres,i,j,col[0]);
+		   }
+	   }
+
+
+		for(i = vinfo.xres / 2 - 50; i < vinfo.xres / 2 + 50; i++) {
+	        for(j=vinfo.yres / 2 - 50; j<vinfo.yres / 2 + 50; j++) {
+	            fb_draw_point(FrameBuffer,vinfo.xres,vinfo.yres,i,j,col[k%5]);
+			}
+		}
+ 		   
+	    inputc = getchar();
+ 	    if (inputc == 'Q' || inputc == 'q') break;
+	}
+}
+

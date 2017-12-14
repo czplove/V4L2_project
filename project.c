@@ -34,7 +34,7 @@ int main(void)
 #if 1
 	//-屏幕显示固定图片
 	//-像素点和内存映射之间还有RGB的关系
-	
+	FrameBuffer_draw();
 #endif
 
 #if 0

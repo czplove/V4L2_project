@@ -18,6 +18,17 @@ int Write_FrameBuffer(const char *buffer);
 //退出framebuffer  
 int Exit_Framebuffer(void);  
   
+struct fb_lcd
+{
+   int fb_fd;
+   void *fb_mem;
+   unsigned int fb_xres;
+   unsigned int fb_yres;
+   unsigned int fb_line_len;
+   unsigned int fb_size;
+   unsigned int fb_bpp;
+};
   
+
   
 #endif //_FRAMEBUFFEROPT_H  
