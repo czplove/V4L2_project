@@ -25,7 +25,7 @@ int main(void)
     //采集一张图片  
     int count = 0 ;   
     //-read_bmp_header("5.bmp", (struct bmp_header_t *)bmp);
-    show_bmp("5.bmp", "cap00.bmp");
+    show_bmp("5.bmp", "cap00.bmp");	//-读一个图片,显示到LCD,以文件形式存储
     while(1)  
     {
 #if 0
