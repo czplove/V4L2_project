@@ -246,6 +246,10 @@
     
 #include "juv.h"    
    
+extern int *FrameBuffer;
+extern struct fb_fix_screeninfo finfo;
+extern struct fb_var_screeninfo vinfo;
+   
 #if 0
 //14byte文件头  
 typedef struct  
@@ -288,34 +292,37 @@ static char *fbp = 0;
 static int xres = 0;  
 static int yres = 0;  
 static int bits_per_pixel = 0;  
-int width,height;  
+
    
 int show_bmp();  
 int fbfd = 0;  
    
+#endif
+
+int width,height;
 
 static int cursor_bitmap_format_convert(char *dst,char *src)  
-{  
+{
     int i ,j ;  
     char *psrc = src ;  
     char *pdst = dst;  
     char *p = psrc;  
    
     /* 由于bmp存储是从后面往前面，所以需要倒序进行转换 */  
-    pdst += (width * height * 3);  
-    for(i=0;i<height;i++){  
-        p = psrc + (i+1) * width * 3;  
-        for(j=0;j<width;j++){  
-            pdst -= 3;  
-            p -= 3;  
+    pdst += (width * height * 2);  //-指到数组最后
+    for(i=0;i<height;i++){
+        p = psrc + (i+1) * width * 2;  
+        for(j=0;j<width;j++){
+            pdst -= 2;  
+            p -= 2;  
             pdst[0] = p[0];  
             pdst[1] = p[1];  
-            pdst[2] = p[2];  
+            //-pdst[2] = p[2];  
         }  
     }  
     return 0;  
-} 
-#endif
+}
+
 
 
 
@@ -349,7 +356,7 @@ int read_bmp_header(char *bmpName, struct bmp_header_t *header)
     if ( rc != 1)  
     {  
         printf("read header error!\n");  
-        fclose( fp );  
+        fclose( fp );
         return( -2 );  
     }  
 	
@@ -363,30 +370,30 @@ int read_bmp_header(char *bmpName, struct bmp_header_t *header)
     }
 	
 	printf("FileHead file type = %d \n",header->magic);  
-    printf("FileHead the length of file = %lld\n", flen);  
-    printf("FileHead offset = %lld\n", header->offset);
+    printf("FileHead the length of file = %d\n", flen);  
+    printf("FileHead offset = %d\n", header->offset);
 	
-	printf("InfoHead head_num = %lld \n",header->head_num);  
-    printf("InfoHead width = %lld, height = %lld\n", header->width, header->height);  
+	printf("InfoHead head_num = %d \n",header->head_num);  
+    printf("InfoHead width = %d, height = %d\n", header->width, header->height);  
     printf("InfoHead color_planes = %d\n", header->color_planes);
 	printf("InfoHead bit_count = %d\n", header->bit_count);
-	printf("InfoHead bit_compression = %lld\n", header->bit_compression);
-	printf("InfoHead image_size = %lld\n", header->image_size);
-	printf("InfoHead color_num = %lld\n", header->color_num);
-	printf("InfoHead important_colors = %lld\n", header->important_colors);
+	printf("InfoHead bit_compression = %d\n", header->bit_compression);
+	printf("InfoHead image_size = %d\n", header->image_size);
+	printf("InfoHead color_num = %d\n", header->color_num);
+	printf("InfoHead important_colors = %d\n", header->important_colors);
 	
 	printf("out read_bmp_header function\n");  
 	//定义变量，计算图像每行像素所占的字节数（必须是4的倍数）
 	//int lineByte=(bmpWidth * biBitCount/8+3)/4*4;
 	//-int lineByte=(bmpWidth*biBitCount+31)/32*4;
-	
+	fclose( fp );
 }
 #endif
    
-#if 0
-int show_bmp(char *path,char *fb_path)  
+#if 1
+int show_bmp(char *bmpName, struct bmp_header_t *header, char *fb_path)  
 {
-    int i;  
+    int i, j;  
     FILE *fp,*fb_file;  
     int rc;  
     int line_x, line_y;  
@@ -398,84 +405,40 @@ int show_bmp(char *path,char *fb_path)
     int ret = -1;  
     int bmp_data_length = 0;  
    
+   
+	read_bmp_header(bmpName, (struct bmp_header_t *)header);
+   
     printf("into show_bmp function\n");  
-    if(path == NULL || fb_path == NULL)  
-    {  
+    if(bmpName == NULL)  
+    {
         printf("path Error,return\n");  
         return -1;  
     }  
-    printf("path = %s\n", path);  
-    fp = fopen( path, "rb" );  
-    if(fp == NULL){  
+    printf("path = %s\n", bmpName);  
+    fp = fopen( bmpName, "rb" );  
+    if(fp == NULL){
         printf("load cursor file open failed\n");  
         return -1;  
     }  
    
-    printf("fb_path = %s\n", fb_path);  
-    fb_file = fopen( fb_path, "wb" );  
-    if(fb_file == NULL){  
-        printf("load cursor file open failed\n");  
-        return -1;  
-    }  
    
-    /* 求解文件长度 */  
-    fseek(fp,0,SEEK_SET);  
-    fseek(fp,0,SEEK_END);  
+    //跳转到数据区  
+    fseek(fp, header->offset, SEEK_SET);  
+    printf(" FileHead.cfoffBits = %d\n", header->offset);  
+    //-printf(" InfoHead.ciBitCount = %d\n", InfoHead.ciBitCount);  
    
-    flen = ftell(fp);  
-    printf("the length of file is %d\n",flen);  //-整个文件的实际大小
-   
-    bmp_data_buf = (char*)calloc(1,flen - 54);//位图纯数据部分  
-    if(bmp_data_buf == NULL){  
+   	bmp_data_buf = (char*)calloc(1,header->image_size);//位图纯数据部分  
+    if(bmp_data_buf == NULL){
         printf("load > malloc bmp out ofmemory!\n");  
         return -1;  
-    }  
-   
-   
-    /* 再移位到文件头部 */  
-    fseek(fp,0,SEEK_SET);  
-   
-    rc = fread(&FileHead, sizeof(BITMAPFILEHEADER),1, fp);  
-    if ( rc != 1)  
-    {  
-        printf("read header error!\n");  
-        fclose( fp );  
-        return( -2 );  
-    }  
-   
-    //检测是否是bmp图像  
-    if (memcmp(FileHead.cfType, "BM", 2) != 0)  //-文件头
-    {  
-        printf("it's not a BMP file\n");  
-        fclose( fp );  
-        return( -3 );  
     }
-    rc = fread( (char *)&InfoHead, sizeof(BITMAPINFOHEADER),1, fp );  //-位图头
-    if ( rc != 1)  
-    {  
-        printf("read infoheader error!\n");  
-        fclose( fp );  
-        return( -4 );  
-    }  
-    width = InfoHead.ciWidth;  
-    height = InfoHead.ciHeight;  
-   
-    printf("FileHead.cfSize =%d byte\n",FileHead.cfSize);  
-    printf("flen = %d\n", flen);  
-    printf("width = %d, height = %d\n", width, height);  
-   
-    bmp_data_length = width * height * 2;  
-   
+    
+    bmp_data_length = header->image_size;
     printf("bmp_data_length = %d\n", bmp_data_length);  
-   
-    //跳转的数据区  
-    fseek(fp, FileHead.cfoffBits, SEEK_SET);  
-    printf(" FileHead.cfoffBits = %d\n", FileHead.cfoffBits);  
-    printf(" InfoHead.ciBitCount = %d\n", InfoHead.ciBitCount);  
-   
+    
     //每行字节数  
     buf = bmp_data_buf;  
-    while ((ret = fread(buf,1,bmp_data_length,fp)) >= 0) { 
+    while ((ret = fread(buf,1,bmp_data_length,fp)) >= 0) {//-返回真实读取的项数，若大于count则意味着产生了错误。
         if (ret == 0) {
             usleep(100);  
             continue;  
@@ -485,21 +448,57 @@ int show_bmp(char *path,char *fb_path)
         bmp_data_length = bmp_data_length -ret;  
         if(bmp_data_length == 0)  
             break;  
+    }
+    
+    if(fb_path == NULL)  
+    {
+        printf("path Error,return\n");  
+        return -1;  
+    }
+    printf("fb_path = %s\n", fb_path);  
+    fb_file = fopen( fb_path, "wb" );  
+    if(fb_file == NULL){
+        printf("load cursor file open failed\n");  
+        return -1;  
+    }    
+   
+    ///重新计算，很重要！！ 
+    width = header->width;
+    height = header->height;
+    bmp_data_length = header->image_size;
+    bmp_buf_dst = (char*)calloc(1,bmp_data_length );  
+    if(bmp_buf_dst == NULL){  
+        printf("load > malloc bmp out ofmemory!\n");  
+        return -1;  
     }  
+    
+ 
    
-    ///重新计算，很重要！！  
-    //-bmp_data_length = width * height *3;  
-    //-bmp_buf_dst = (char*)calloc(1,bmp_data_length );  
-    //-if(bmp_buf_dst == NULL){  
-    //-    printf("load > malloc bmp out ofmemory!\n");  
-    //-    return -1;  
-    //-}  
-   
-//-   memcpy(FrameBuffer , bmp_data_buf , bmp_data_length); 
-    //-cursor_bitmap_format_convert(bmp_buf_dst,bmp_data_buf);  
-    fwrite(bmp_buf_dst,1,bmp_data_length,fb_file);  
+    //-memcpy(FrameBuffer , bmp_data_buf , bmp_data_length); 
+    cursor_bitmap_format_convert(bmp_buf_dst,bmp_data_buf);  
+    
+    for(j=0; j<vinfo.yres - 1; j++){	//-全屏底色是黑的
+		   for(i=0; i<vinfo.xres - 1 ; i++) {
+				fb_draw_point(FrameBuffer,vinfo.xres,vinfo.yres,i,j,0);
+		   }
+	}
+	
+	for(j = 0 ; j < vinfo.yres ; j++)  //-行 y
+    {
+        for(i = 0 ; i < vinfo.xres ;  i++)  //-列 x
+        {
+            if((j < height)  && (i < width))  
+            {
+                *((unsigned short int *)FrameBuffer+j*vinfo.xres+i) = (unsigned short int)bmp_buf_dst[j*width+i];  
+            }
+        }  
+    }  
+    
+    fwrite(bmp_data_buf,1,bmp_data_length,fb_file);  
+    //-char *str="hello,I am a test program!";  
+	//-fwrite(str,sizeof(char),strlen(str),fb_file);
     free(bmp_data_buf);  
-    free(bmp_buf_dst);  
+    //-free(bmp_buf_dst);  
    
     fclose(fp);  
     fclose(fb_file);  

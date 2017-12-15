@@ -8,10 +8,10 @@
 #include "FrameBufferOpt.h"  
   
 static int Frame_fd ;   
-static int *FrameBuffer = NULL ;   
+int *FrameBuffer = NULL ;   
 static int W , H ;  
-static struct fb_fix_screeninfo finfo;
-static struct fb_var_screeninfo vinfo;
+struct fb_fix_screeninfo finfo;
+struct fb_var_screeninfo vinfo;
   
 #if 1  
 //初始化framebuffer  
