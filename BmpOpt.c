@@ -249,8 +249,10 @@
 extern int *FrameBuffer;
 extern struct fb_fix_screeninfo finfo;
 extern struct fb_var_screeninfo vinfo;
+
+char *bmp_head_buf = NULL;  
    
-#if 0
+
 //14byte文件头  
 typedef struct  
 {  
@@ -261,6 +263,7 @@ typedef struct
 }__attribute__((packed)) BITMAPFILEHEADER;  
 //__attribute__((packed))的作用是告诉编译器取消结构在编译过程中的优化对齐  
    
+#if 0
 //40byte信息头  
 typedef struct  
 {  
@@ -285,7 +288,7 @@ typedef struct
     unsigned char reserved;  
 }__attribute__((packed)) PIXEL;//颜色模式RGB  
    
-BITMAPFILEHEADER FileHead;  
+
 BITMAPINFOHEADER InfoHead;  
    
 static char *fbp = 0;  
@@ -299,7 +302,10 @@ int fbfd = 0;
    
 #endif
 
+
+BITMAPFILEHEADER FileHead;
 int width,height;
+int flen;
 
 //-0xF800、0x07E0、0x001F
 static int cursor_bitmap_format_convert(char *dst,char *src)  
@@ -328,9 +334,10 @@ static int cursor_bitmap_format_convert(char *dst,char *src)
 
 
 #if 1
-int read_bmp_header(char *bmpName, struct bmp_header_t *header)
+int read_bmp_header(char *bmpName)
 {
 	int rc;
+	struct bmp_header_t *header;
 	
 	printf("into read_bmp_header function\n");
     if(bmpName == NULL)
@@ -347,33 +354,52 @@ int read_bmp_header(char *bmpName, struct bmp_header_t *header)
     fseek(fp,0,SEEK_SET);  
     fseek(fp,0,SEEK_END);  
    
-    int flen = ftell(fp);  
+    flen = ftell(fp);  
     printf("the length of file is %d\n",flen);  //-整个文件的实际大小
 	
 	/* 再移位到文件头部 */  
     fseek(fp,0,SEEK_SET);  
    
-    rc = fread(header, sizeof(struct bmp_header_t),1, fp);  
+    rc = fread(&FileHead, sizeof(BITMAPFILEHEADER),1, fp);  //-文件头的大小是固定的
     if ( rc != 1)  
-    {  
+    {
         printf("read header error!\n");  
         fclose( fp );
         return( -2 );  
-    }  
+    }
 	
 	//检测是否是bmp图像  
-//    if (memcmp(header->magic, "BM", 2) != 0)  //-文件头,这个必须是地址的情况下比较否则Segmentation fault (core dumped)
-    if(header->magic != 0x4D42)
+    if (memcmp(FileHead.cfType, "BM", 2) != 0)  //-文件头,这个必须是地址的情况下比较否则Segmentation fault (core dumped)
+//    if(header->magic != 0x4D42)
     {  
         printf("it's not a BMP file\n");  
         fclose( fp );  
         return( -3 );  
     }
 	
-	printf("FileHead file type = %d \n",header->magic);  
-    printf("FileHead the length of file = %d\n", flen);  
-    printf("FileHead offset = %d\n", header->offset);
+	//-printf("FileHead file type = %d \n",header->magic);  
+    printf("FileHead real the length of file = %d\n", flen);  //-文件的实际大小
+    printf("FileHead offset = %d\n", FileHead.cfoffBits);
+    
+    /* 再移位到文件头部 */  
+    fseek(fp,0,SEEK_SET);
+    
+  	bmp_head_buf = (char*)calloc(1,FileHead.cfoffBits);//位图数据之前的内容
+    if(bmp_head_buf == NULL){
+        printf("load > malloc bmp out ofmemory!\n");  
+        return -1;  
+    }
+    
+    rc = fread(bmp_head_buf, FileHead.cfoffBits,1, fp);  //-文件头的大小是固定的
+    if ( rc != 1)
+    {
+        printf("read header error!\n");  
+        free(bmp_head_buf);
+        fclose( fp );
+        return( -2 );  
+    }
 	
+	header = bmp_head_buf;
 	printf("InfoHead head_num = %d \n",header->head_num);  
     printf("InfoHead width = %d, height = %d\n", header->width, header->height);  
     printf("InfoHead color_planes = %d\n", header->color_planes);
@@ -392,7 +418,7 @@ int read_bmp_header(char *bmpName, struct bmp_header_t *header)
 #endif
    
 #if 1
-int show_bmp(char *bmpName, struct bmp_header_t *header, char *fb_path)  
+int show_bmp(char *bmpName, char *fb_path)  
 {
     int i, j;  
     FILE *fp,*fb_file;  
@@ -405,9 +431,11 @@ int show_bmp(char *bmpName, struct bmp_header_t *header, char *fb_path)
     int flen = 0;  
     int ret = -1;  
     int bmp_data_length = 0;  
+    struct bmp_header_t *header;
    
    
-	read_bmp_header(bmpName, (struct bmp_header_t *)header);
+	read_bmp_header(bmpName);
+	header = bmp_head_buf;
    
     printf("into show_bmp function\n");  
     if(bmpName == NULL)  
@@ -428,16 +456,16 @@ int show_bmp(char *bmpName, struct bmp_header_t *header, char *fb_path)
     printf(" FileHead.cfoffBits = %d\n", header->offset);  
     //-printf(" InfoHead.ciBitCount = %d\n", InfoHead.ciBitCount);  
    
-   	bmp_data_buf = (char*)calloc(1,header->image_size);//位图纯数据部分  
+   	bmp_data_buf = (char*)calloc(1,header->image_size);//位图纯数据部分和实际像素是对应的,只是有些软件会在最后多两个信息位不影响显示  
     if(bmp_data_buf == NULL){
         printf("load > malloc bmp out ofmemory!\n");  
         return -1;  
     }
     
-    bmp_data_length = header->image_size;
+    bmp_data_length = header->image_size;	//-整个位图数据的长度
     printf("bmp_data_length = %d\n", bmp_data_length);  
     
-    //每行字节数  
+    //每行字节数,下面把所有位图数据读出
     buf = bmp_data_buf;  
     while ((ret = fread(buf,1,bmp_data_length,fp)) >= 0) {//-返回真实读取的项数，若大于count则意味着产生了错误。
         if (ret == 0) {
@@ -451,6 +479,7 @@ int show_bmp(char *bmpName, struct bmp_header_t *header, char *fb_path)
             break;  
     }
     
+    //-准备存储图片文件
     if(fb_path == NULL)  
     {
         printf("path Error,return\n");  
@@ -473,11 +502,11 @@ int show_bmp(char *bmpName, struct bmp_header_t *header, char *fb_path)
         return -1;  
     }  
     
- 
-   
     //-memcpy(FrameBuffer , bmp_data_buf , bmp_data_length); 
-    cursor_bitmap_format_convert(bmp_buf_dst,bmp_data_buf);  
+    cursor_bitmap_format_convert(bmp_buf_dst,bmp_data_buf);  //-目前转化中少最后多余的两个信息字节
     
+#if 0
+	//-实现图片屏幕显示
     for(j=0; j<vinfo.yres - 1; j++){	//-全屏底色是黑的
 		   for(i=0; i<vinfo.xres - 1 ; i++) {
 				fb_draw_point(FrameBuffer,vinfo.xres,vinfo.yres,i,j,0);
@@ -495,12 +524,15 @@ int show_bmp(char *bmpName, struct bmp_header_t *header, char *fb_path)
                 *((unsigned short int *)FrameBuffer+j*vinfo.xres+i) = *((unsigned short int *)bmp_buf_dst+j*width+i);
             }
         }  
-    }  
-    
+    }
+#endif
+
+    fwrite(bmp_head_buf,1,FileHead.cfoffBits,fb_file);  
     fwrite(bmp_data_buf,1,bmp_data_length,fb_file);  
     //-char *str="hello,I am a test program!";  
 	//-fwrite(str,sizeof(char),strlen(str),fb_file);
-    free(bmp_data_buf);  
+	free(bmp_head_buf);
+    free(bmp_data_buf);
     free(bmp_buf_dst);  
    
     fclose(fp);  

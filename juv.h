@@ -49,11 +49,11 @@ BMP格式的文件从头到尾依次是如下信息：
 //定义bmp头  
 struct bmp_header_t{
     u16        magic;  		//-文件类型
-    u32       file_size;  	//-文件大小
+    u32       file_size;  	//-文件大小,目前这个大小不具有通用性
     u32       RESERVED1;  	//-保留，必须设置为0
     u32       offset;         //54 bytes 表示54个偏移量(从头到位图数据的偏移)  
   
-    u32       head_num;    //40  信息头的大小，即40
+    u32       head_num;    //40  信息头的大小，即40 这个大小也是不固定的目前有56
     u32       width;  		//-以像素为单位说明图像的宽度
     u32       height;  		//-以像素为单位说明图像的高度
     u16       color_planes; //1  为目标设备说明颜色平面数，总被设置为1
