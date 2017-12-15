@@ -184,15 +184,16 @@ int show_bmp(char *bmpName, char *fb_path)
     fseek(fp, header->offset, SEEK_SET);  
     printf(" FileHead.cfoffBits = %d\n", header->offset);  
     //-printf(" InfoHead.ciBitCount = %d\n", InfoHead.ciBitCount);  
+    
+    bmp_data_length = header->width * header->height * header->bit_count / 8;	//-header->image_size;	//-整个位图数据的长度
+    printf("bmp_data_length = %d\n", bmp_data_length);
    
-   	bmp_data_buf = (char*)calloc(1,header->image_size);//位图纯数据部分和实际像素是对应的,只是有些软件会在最后多两个信息位不影响显示  
+   	bmp_data_buf = (char*)calloc(1,bmp_data_length);//位图纯数据部分和实际像素是对应的,只是有些软件会在最后多两个信息位不影响显示  
     if(bmp_data_buf == NULL){
         printf("load > malloc bmp out ofmemory!\n");  
         return -1;  
     }
-    
-    bmp_data_length = header->image_size;	//-整个位图数据的长度
-    printf("bmp_data_length = %d\n", bmp_data_length);  
+      
     
     //每行字节数,下面把所有位图数据读出
     buf = bmp_data_buf;  
@@ -224,7 +225,7 @@ int show_bmp(char *bmpName, char *fb_path)
     ///重新计算，很重要！！ 
     width = header->width;
     height = header->height;
-    bmp_data_length = header->image_size;
+    bmp_data_length = header->width * header->height * header->bit_count / 8;	//-header->image_size;
     bmp_buf_dst = (char*)calloc(1,bmp_data_length );  
     if(bmp_buf_dst == NULL){  
         printf("load > malloc bmp out ofmemory!\n");  
