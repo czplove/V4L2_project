@@ -301,6 +301,7 @@ int fbfd = 0;
 
 int width,height;
 
+//-0xF800、0x07E0、0x001F
 static int cursor_bitmap_format_convert(char *dst,char *src)  
 {
     int i ,j ;  
@@ -318,7 +319,7 @@ static int cursor_bitmap_format_convert(char *dst,char *src)
             pdst[0] = p[0];  
             pdst[1] = p[1];  
             //-pdst[2] = p[2];  
-        }  
+        }
     }  
     return 0;  
 }
@@ -489,7 +490,9 @@ int show_bmp(char *bmpName, struct bmp_header_t *header, char *fb_path)
         {
             if((j < height)  && (i < width))  
             {
-                *((unsigned short int *)FrameBuffer+j*vinfo.xres+i) = (unsigned short int)bmp_buf_dst[j*width+i];  
+            	//-*((unsigned short int *)bmp_buf_dst+j*width+i) = 0xffff;
+            	//-0xF800、0x07E0、0x001F	分别表示红 绿 蓝
+                *((unsigned short int *)FrameBuffer+j*vinfo.xres+i) = *((unsigned short int *)bmp_buf_dst+j*width+i);
             }
         }  
     }  
@@ -498,7 +501,7 @@ int show_bmp(char *bmpName, struct bmp_header_t *header, char *fb_path)
     //-char *str="hello,I am a test program!";  
 	//-fwrite(str,sizeof(char),strlen(str),fb_file);
     free(bmp_data_buf);  
-    //-free(bmp_buf_dst);  
+    free(bmp_buf_dst);  
    
     fclose(fp);  
     fclose(fb_file);  
