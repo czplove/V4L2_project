@@ -231,61 +231,6 @@
 //}
 //
 
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <linux/fb.h>
-#include <sys/mman.h>
-#include<sys/ioctl.h>
-#include "FrameBufferOpt.h"  
-  
-static int Frame_fd ;   
-static int *FrameBuffer = NULL ;   
-static int W , H ;  
-static struct fb_fix_screeninfo finfo;
-static struct fb_var_screeninfo vinfo;
-  
-#if 1  
-//初始化framebuffer  
-int Init_FrameBuffer(int Width , int Higth)  
-{
-	
-    W = Width ;   
-    H = Higth ;   
-    Frame_fd = open("/dev/fb0" , O_RDWR);  
-    if(-1 == Frame_fd)  
-    {  
-        perror("open frame buffer fail");  
-        return -1 ;   
-    }  
-    
-    if(ioctl(Frame_fd, FBIOGET_FSCREENINFO, &finfo))	//-获取固定信息,各个硬件不同,所以需要动态获取
-	{
-	   printf("Error:reading fixed info.\n");
-	   return -1;
-	}
-  	printf("fb_size = %d\r\n",finfo.smem_len);						//-1638400
-  	
-  	if(ioctl(Frame_fd, FBIOGET_VSCREENINFO, &vinfo))	//-返回的是与Framebuffer有关的可变信息。
-	{
-	   printf("Error reading var info.\n");
-	   return -1;
-	}
-	printf("fb_xres = %d\r\n",vinfo.xres);						//-800
-	printf("fb_yres = %d\r\n",vinfo.yres);						//-480
-  	
-//根本就不用CPU搬运   用DMA做为搬运工  
-FrameBuffer = mmap(0, finfo.smem_len , PROT_READ | PROT_WRITE , MAP_SHARED , Frame_fd ,0 );  
-    if(FrameBuffer == (void *)-1)  
-    {  
-        perror("memory map fail");  
-        return -2 ;  
-    }  
-    return 0 ;   
-}
-#endif  
-
 ///////////////////////////////////////////////////////////////////////////////
 //-1. 在BMP文件中，如果一个数据需要用几个字节来表示的话，那么该数据的存放字节顺序为“低地址村存放低位数据，高地址存放高位数据”。
 #include <unistd.h>  
@@ -298,7 +243,10 @@ FrameBuffer = mmap(0, finfo.smem_len , PROT_READ | PROT_WRITE , MAP_SHARED , Fra
 #include <sys/ioctl.h>  
 #include <arpa/inet.h>  
 #include <errno.h>  
+    
+#include "juv.h"    
    
+#if 0
 //14byte文件头  
 typedef struct  
 {  
@@ -345,7 +293,7 @@ int width,height;
 int show_bmp();  
 int fbfd = 0;  
    
-   
+
 static int cursor_bitmap_format_convert(char *dst,char *src)  
 {  
     int i ,j ;  
@@ -366,8 +314,76 @@ static int cursor_bitmap_format_convert(char *dst,char *src)
         }  
     }  
     return 0;  
-}  
+} 
+#endif
+
+
+
+#if 1
+int read_bmp_header(char *bmpName, struct bmp_header_t *header)
+{
+	int rc;
+	
+	printf("into read_bmp_header function\n");
+    if(bmpName == NULL)
+    {  
+        printf("path Error,return\n");  
+        return -1;  
+    }
+    printf("path = %s\n", bmpName);  
+	//二进制读方式打开指定的图像文件
+	FILE *fp=fopen(bmpName,"rb");
+	if(fp==0)  return 0;
+	
+	/* 求解文件长度 */  
+    fseek(fp,0,SEEK_SET);  
+    fseek(fp,0,SEEK_END);  
    
+    int flen = ftell(fp);  
+    printf("the length of file is %d\n",flen);  //-整个文件的实际大小
+	
+	/* 再移位到文件头部 */  
+    fseek(fp,0,SEEK_SET);  
+   
+    rc = fread(header, sizeof(struct bmp_header_t),1, fp);  
+    if ( rc != 1)  
+    {  
+        printf("read header error!\n");  
+        fclose( fp );  
+        return( -2 );  
+    }  
+	
+	//检测是否是bmp图像  
+//    if (memcmp(header->magic, "BM", 2) != 0)  //-文件头,这个必须是地址的情况下比较否则Segmentation fault (core dumped)
+    if(header->magic != 0x4D42)
+    {  
+        printf("it's not a BMP file\n");  
+        fclose( fp );  
+        return( -3 );  
+    }
+	
+	printf("FileHead file type = %d \n",header->magic);  
+    printf("FileHead the length of file = %lld\n", flen);  
+    printf("FileHead offset = %lld\n", header->offset);
+	
+	printf("InfoHead head_num = %lld \n",header->head_num);  
+    printf("InfoHead width = %lld, height = %lld\n", header->width, header->height);  
+    printf("InfoHead color_planes = %d\n", header->color_planes);
+	printf("InfoHead bit_count = %d\n", header->bit_count);
+	printf("InfoHead bit_compression = %lld\n", header->bit_compression);
+	printf("InfoHead image_size = %lld\n", header->image_size);
+	printf("InfoHead color_num = %lld\n", header->color_num);
+	printf("InfoHead important_colors = %lld\n", header->important_colors);
+	
+	printf("out read_bmp_header function\n");  
+	//定义变量，计算图像每行像素所占的字节数（必须是4的倍数）
+	//int lineByte=(bmpWidth * biBitCount/8+3)/4*4;
+	//-int lineByte=(bmpWidth*biBitCount+31)/32*4;
+	
+}
+#endif
+   
+#if 0
 int show_bmp(char *path,char *fb_path)  
 {
     int i;  
@@ -479,7 +495,7 @@ int show_bmp(char *path,char *fb_path)
     //-    return -1;  
     //-}  
    
-   memcpy(FrameBuffer , bmp_data_buf , bmp_data_length); 
+//-   memcpy(FrameBuffer , bmp_data_buf , bmp_data_length); 
     //-cursor_bitmap_format_convert(bmp_buf_dst,bmp_data_buf);  
     fwrite(bmp_buf_dst,1,bmp_data_length,fb_file);  
     free(bmp_data_buf);  
@@ -490,7 +506,8 @@ int show_bmp(char *path,char *fb_path)
    
     printf("show logo return 0\n");  
     return 0;  
-}  
+}
+#endif
    
 #if 0
 int main()  

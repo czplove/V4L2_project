@@ -64,7 +64,7 @@ struct bmp_header_t{
     u32       v_resolution;  //-表示垂直分辨率，单位是像素/米，有符号整数；
     u32       color_num;  //-说明位图使用的调色板中的颜色索引数，为0说明使用所有；
     u32       important_colors;  //-说明对图像显示有重要影响的颜色索引数，为0说明都重要；
-};  
+};
   
 #pragma pack()  
   

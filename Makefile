@@ -7,8 +7,8 @@
 #-这个是最后一个makefile了
 
 #-LDFLAGS += -lpthread
-CC=arm-none-linux-gnueabi-gcc
-#CC=gcc
+#CC=arm-none-linux-gnueabi-gcc
+CC=gcc
 
 TARGET = v4l2t
 #-包含头文件的地方

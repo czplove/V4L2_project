@@ -7,13 +7,14 @@
   
 #define    WIDTH   640  
 #define    HIGHT   480  
+
   
 int main(void)  
-{  
+{
     char yuyv[WIDTH*HIGHT*2];  //-存储一张图片的数据
     char bmp[WIDTH*HIGHT*3];  //-24位图需要三个字节表示一个像素点
   
-//  set_bmp_header((struct bmp_header_t *)bmp, WIDTH, HIGHT);  
+  	//set_bmp_header((struct bmp_header_t *)bmp, WIDTH, HIGHT);  
     //初始化摄像头  
     Init_Cameral(WIDTH , HIGHT );  
     //初始化framebuffer  
@@ -23,7 +24,7 @@ int main(void)
     Start_Cameral();  
     //采集一张图片  
     int count = 0 ;   
-    
+    read_bmp_header("5.bmp", (struct bmp_header_t *)bmp);
     while(1)  
     {
 #if 0
@@ -58,3 +59,4 @@ int main(void)
       
     return 0;  
 }  
+

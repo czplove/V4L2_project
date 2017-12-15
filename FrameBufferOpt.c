@@ -13,7 +13,7 @@ static int W , H ;
 static struct fb_fix_screeninfo finfo;
 static struct fb_var_screeninfo vinfo;
   
-#if 0  
+#if 1  
 //初始化framebuffer  
 int Init_FrameBuffer(int Width , int Higth)  
 {
