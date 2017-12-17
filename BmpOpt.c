@@ -272,6 +272,59 @@ int show_bmp(char *bmpName, char *fb_path)
     return 0;  
 }
 #endif
+
+#if 1
+int save_bmp(char *bmpName, char *fb_path)  
+{
+    int i, j;  
+    FILE *fp,*fb_file;  
+    int rc;  
+    int line_x, line_y;  
+    long int location = 0, BytesPerLine = 0;  
+    char *bmp_data_buf = NULL;  
+    char *bmp_buf_dst = NULL;  
+    char * buf = NULL;  
+    int flen = 0;  
+    int ret = -1;  
+    int bmp_data_length = 0;  
+    struct bmp_header_t *header;
+   
+   header = bmpName;
+    
+    //-准备存储图片文件
+    if(fb_path == NULL)  
+    {
+        printf("path Error,return\n");  
+        return -1;  
+    }
+    printf("fb_path = %s\n", fb_path);  
+    fb_file = fopen( fb_path, "wb" );  
+    if(fb_file == NULL){
+        printf("load cursor file open failed\n");  
+        return -1;  
+    }    
+   
+    
+    
+    //-memcpy(FrameBuffer , bmp_data_buf , bmp_data_length); 
+    //-cursor_bitmap_format_convert(bmp_buf_dst,bmp_data_buf);  //-目前转化中少最后多余的两个信息字节
+    bmp_data_length = header->width * header->height * header->bit_count / 8;
+
+    //-fwrite(bmp_head_buf,1,FileHead.cfoffBits,fb_file);  
+    fwrite(bmpName,1,bmp_data_length + 54,fb_file);  
+    //-char *str="hello,I am a test program!";  
+	//-fwrite(str,sizeof(char),strlen(str),fb_file);
+    //-free(bmp_head_buf);
+    //-free(bmp_data_buf);
+    //-free(bmp_buf_dst);  
+   
+    //-fclose(fp);  
+    fclose(fb_file);  
+   
+    printf("show logo return 0\n");  
+    return 0;  
+}
+#endif
    
 #if 0
 int main()  

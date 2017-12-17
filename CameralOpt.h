@@ -10,7 +10,7 @@
 #include <errno.h>  
 #include <sys/mman.h>  
   
-#define   COUNT  3  
+#define   COUNT  2  
 //初始化摄像头  
 int Init_Cameral(int Width , int Hight);  
 int Exit_Cameral(void); //退出摄像头  

@@ -12,10 +12,12 @@ int Init_Cameral(int Width , int Hight)
     struct v4l2_capability cap; 
     int ret ; 
       
-    //打开设备  
+    // 用非阻塞模式打开摄像头设备
+    //-video_fd = open("videodevname", O_RDWR | O_NONBLOCK, 0);
+    //用阻塞模式打开摄像头设备
     video_fd = open(videodevname , O_RDWR);  
     if(-1 == video_fd )  
-    {  
+    {
         perror("open video device fail");  
         return -1 ;   
     }
@@ -28,7 +30,26 @@ int Init_Cameral(int Width , int Hight)
     }
     printf("Driver Name:%s\nCard Name:%s\nBus info:%s\nDriver Version:%u.%u.%u\n",
     	cap.driver,cap.card,cap.bus_info,(cap.version>>16)&0XFF, (cap.version>>8)&0XFF,cap.version&0XFF);
-    printf("Device support operation = %d\r\n",cap.capabilities);  
+    /*
+    能力集中包含：
+	V4L2_CAP_VIDEO_CAPTURE 0x00000001     The device supports the Video    Capture interface.
+	V4L2_CAP_VIDEO_OUTPUT   0x00000002     The device supports the Video    Output interface.
+	V4L2_CAP_VIDEO_OVERLAY 0x00000004     The device supports the Video    Overlay interface.
+	A video overlay device typically stores captured images directly in the video memory   of a graphics card,with hardware clipping and scaling.
+	V4L2_CAP_VBI_CAPTURE     0x00000010 The device supports the Raw  VBI Capture interface, providing Teletext and Closed Caption   data.
+	V4L2_CAP_VBI_OUTPUT     0x00000020      The device supports the Raw  VBI Output interface.
+	V4L2_CAP_SLICED_VBI_CAPTURE  0x00000040 The device supports the Sliced VBI Capture interface.
+	V4L2_CAP_SLICED_VBI_OUTPUT   0x00000080 The device supports the Sliced VBI Output interface.
+	V4L2_CAP_RDS_CAPTURE    0x00000100          [to be defined]
+	#define V4L2_CAP_TUNER 0x00010000  
+	#define V4L2_CAP_AUDIO 0x00020000  
+	#define V4L2_CAP_RADIO 0x00040000  
+	
+	#define V4L2_CAP_READWRITE 0x01000000  
+	#define V4L2_CAP_ASYNCIO 0x02000000  
+	#define V4L2_CAP_STREAMING 0x04000000 
+    */	
+    printf("Device support operation = 0x%X\r\n",cap.capabilities);  //-通常为：V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING
     
     struct v4l2_format fmt; 
     fmt.type=V4L2_BUF_TYPE_VIDEO_CAPTURE; 
@@ -79,7 +100,7 @@ int Init_Cameral(int Width , int Hight)
   
     ret = ioctl(video_fd , VIDIOC_REQBUFS , &requestbuffer);  //-向设备申请缓冲区
     if(ret != 0)  
-    {  
+    {
         perror("request buffer fail ");  
         return -3  ;  
     }  
@@ -184,15 +205,18 @@ int Stop_Cameral(void)
   
 int Get_Picture(char *buffer)  
 {
-    int ret ;   
+    int ret ;
+    
+    printf("Get_Picture \n");
     //出队  
     ret = ioctl(video_fd , VIDIOC_DQBUF , &dequeue);  //-从缓冲区取出一个缓冲帧
-    if(ret != 0)  
-    {  
+    if(ret != 0)
+    {
         perror("dequeue fail");  
         return -1 ;   
     }  
   
+    printf("dequeue success \n");
     //获取图片数据 YUV   yuv[dequeue.index]  
     memcpy(buffer , yuv[dequeue.index] , dequeue.length);  
 //  write(yuyv_fd , yuv[dequeue.index] , dequeue.length);  
