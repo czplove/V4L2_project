@@ -218,7 +218,7 @@ int Get_Picture(char *buffer)
   
     printf("dequeue success \n");
     //获取图片数据 YUV   yuv[dequeue.index]  
-    memcpy(buffer , yuv[dequeue.index] , dequeue.length);  
+    memcpy(buffer , yuv[dequeue.index] , dequeue.length);  //-缓存里面其实存放的是码流纯数据
 //  write(yuyv_fd , yuv[dequeue.index] , dequeue.length);  
   
     enqueue.index = dequeue.index ;   
