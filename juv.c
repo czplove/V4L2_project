@@ -12,12 +12,12 @@ RGB格式中，一个24bpp像素要占用4字节空间。在YUV格式中,可以�
 一个比较重要课题。
 */
 #define BIT_COUNT   24  
-  
+//-下面这种文件表示格式不是所有的通用的,但是这个是可用的
 void set_bmp_header(struct bmp_header_t *header, u32 width, u32 height)  
 {
     header->magic = 0x4d42;  //-BMP格式的文件,字符显示就是‘BM’
-    header->image_size = width * height * BIT_COUNT/8;  //-文件的大小
-    header->file_size = header->image_size + 54;
+    header->image_size = width * height * BIT_COUNT/8;  //-位图数据的大小
+    header->file_size = header->image_size + 54;	//-文件的大小
     header->RESERVED1 = 0;  
     header->offset = 54;  //-表示从文件头到位图数据的偏移
   

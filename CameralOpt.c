@@ -4,7 +4,7 @@ int length ;
 char *yuv[COUNT] ;   
 struct v4l2_buffer  enqueue  , dequeue ;  //定义出入队的操作结构体成员  
   
-int Init_Cameral(int Width , int Hight)  
+int Init_Cameral(int Width , int Hight)
 {
     //参数检查  
     char *videodevname = NULL ;   

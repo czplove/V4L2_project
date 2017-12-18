@@ -4,8 +4,8 @@
 #include <fcntl.h>
 #include <linux/fb.h>
 #include <sys/mman.h>
-#include<sys/ioctl.h>
-#include "FrameBufferOpt.h"  
+#include <sys/ioctl.h>
+#include "FrameBufferOpt.h"
   
 static int Frame_fd ;   
 int *FrameBuffer = NULL ;   
@@ -42,8 +42,8 @@ int Init_FrameBuffer(int Width , int Higth)
 	printf("fb_xres = %d\r\n",vinfo.xres);						//-800
 	printf("fb_yres = %d\r\n",vinfo.yres);						//-480
   	
-//根本就不用CPU搬运   用DMA做为搬运工  
-FrameBuffer = mmap(0, finfo.smem_len , PROT_READ | PROT_WRITE , MAP_SHARED , Frame_fd ,0 );  
+	//根本就不用CPU搬运   用DMA做为搬运工  
+	FrameBuffer = mmap(0, finfo.smem_len , PROT_READ | PROT_WRITE , MAP_SHARED , Frame_fd ,0 );  
     if(FrameBuffer == (void *)-1)  
     {  
         perror("memory map fail");  
@@ -74,7 +74,7 @@ int Write_FrameBuffer(const char *buffer)	//-传入的数据是纯RGB数据
   
 //退出framebuffer  
 int Exit_Framebuffer(void)  
-{  
+{
     munmap(FrameBuffer ,  finfo.smem_len);  
     close(Frame_fd);  
     return 0 ;   
