@@ -57,7 +57,9 @@ int Init_FrameBuffer(int Width , int Higth)
 int Write_FrameBuffer(const char *buffer)	//-传入的数据是纯RGB数据
 {
     int row  , col ;   
-    char *p = NULL ;   
+    char *p = NULL ; 
+#if 0
+    //-RGB24显示
     for(row = 0 ; row < vinfo.yres ; row++)  //-行 y
     {
         for(col = 0 ; col < vinfo.xres ;  col++)  //-列 x
@@ -68,8 +70,24 @@ int Write_FrameBuffer(const char *buffer)	//-传入的数据是纯RGB数据
                 FrameBuffer[row*vinfo.xres+col] = RGB((unsigned char)(*(p+2)),(unsigned char)(*(p+1)),(unsigned char )(*p));  
             }
         }  
-    }  
-    return 0 ;   
+    }
+#else
+    //-RGB16显示
+    for(row = 0 ; row < vinfo.yres ; row++)  //-行 y
+    {
+        for(col = 0 ; col < vinfo.xres ;  col++)  //-列 x
+        {
+            if((row < H)  && (col < W))  
+            {
+            	//-*((unsigned short int *)bmp_buf_dst+j*width+i) = 0xffff;
+            	//-0xF800、0x07E0、0x001F	分别表示红 绿 蓝
+                *((unsigned short int *)FrameBuffer+row*vinfo.xres+col) = *((unsigned short int *)buffer+row*W+col);
+            }
+        }  
+    }
+#endif
+
+    return 0 ;
 }
   
 //退出framebuffer  

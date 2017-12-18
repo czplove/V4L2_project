@@ -37,9 +37,10 @@ int main(void)
 #if 1
 	
         Get_Picture(yuyv);  //-从摄像头获取图片数据
-        yuyv2rgb24(yuyv, bmp+54, WIDTH, HIGHT);  //-把图像数据转化为可用个格式
-        //-Write_FrameBuffer(bmp);  //-转化后的数据输出到屏幕上进行显示
-        save_bmp(bmp, "cap01.bmp");
+        //-yuyv2rgb24(yuyv, bmp+54, WIDTH, HIGHT);  //-把图像数据转化为可用个格式
+        yuyv2rgb16(yuyv, bmp+54, WIDTH, HIGHT);
+        Write_FrameBuffer(bmp+54);  //-转化后的数据输出到屏幕上进行显示
+        //-save_bmp(bmp, "cap01.bmp");
 #endif
         
 #if 0

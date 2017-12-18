@@ -11,7 +11,7 @@ RGB格式中，一个24bpp像素要占用4字节空间。在YUV格式中,可以�
 只占2个字节，从这一点看也没有省多少。不过视频应用都是清一色的YUV应用。因此YUV的处理还是
 一个比较重要课题。
 */
-#define BIT_COUNT   24  
+#define BIT_COUNT   16  
 //-下面这种文件表示格式不是所有的通用的,但是这个是可用的
 void set_bmp_header(struct bmp_header_t *header, u32 width, u32 height)  
 {
@@ -94,7 +94,7 @@ int yuyv2rgb24(u8 *yuyv, u8 *rgb, u32 width, u32 height)
     return 0;  
 }
 
-int yuyv2rgb16(u8 *yuyv, u8 *rgb, u32 width, u32 height)  
+int yuyv2rgb16(u8 *yuyv, u8 *rgb, u32 width, u32 height)
 {
     u32 i, in, rgb_index = 0;  
     u8 y0, u0, y1, v1;  
@@ -130,8 +130,8 @@ int yuyv2rgb16(u8 *yuyv, u8 *rgb, u32 width, u32 height)
 	        x = rgb_index%width;  //-列号
 	        
 	        tmp = (((r & 0xF8) >> 3) << 11) + (((g & 0xFC) >> 2) << 5) + ((b & 0xF8) >> 3);
-	        rgb[(y*width+x)*2+0] = tmp & 0xFF;  
-	        rgb[(y*width+x)*2+1] = tmp >> 8;   
+	        rgb[(y*width+x)*2+0] = tmp & 0xFF;
+	        rgb[(y*width+x)*2+1] = tmp >> 8;
 	        
 	        rgb_index++;  
 	    }
