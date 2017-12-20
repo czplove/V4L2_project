@@ -24,7 +24,7 @@ int main(void)
     //初始化摄像头  
     Init_Cameral(WIDTH , HIGHT );  
     //初始化framebuffer  
-    //-Init_FrameBuffer(WIDTH , HIGHT );   
+    Init_FrameBuffer(WIDTH , HIGHT );   
   
     //开启摄像头  
     Start_Cameral();  
@@ -58,7 +58,7 @@ int main(void)
 	
 #endif
 
-#if 1
+#if 0
 	inputc = getchar();
  	if (inputc == 'Q' || inputc == 'q') break;
 #endif
